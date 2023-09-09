@@ -73,6 +73,7 @@ public class Globals {
     private ExecutorService executorService = null;//TODO: AAAAAAAAAAAAAAA MEMORY LEAK!!!!!!!!!
     public final AtomicBoolean globalShutdownBackupFlag = new AtomicBoolean(true);
     public boolean disableWatchdog = false;
+    public volatile boolean shouldReEnableWorldSaving = false;
     private boolean disableTMPFiles = false;
     private AwaitThread restoreAwaitThread = null;
     private Path lockedPath = null;

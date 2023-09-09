@@ -22,6 +22,7 @@ import net.minecraft.server.MinecraftServer;
 import net.szum123321.textile_backup.Globals;
 import net.szum123321.textile_backup.config.ConfigHelper;
 import net.szum123321.textile_backup.core.ActionInitiator;
+import net.szum123321.textile_backup.core.Utilities;
 
 import java.time.Instant;
 
@@ -44,6 +45,11 @@ public class BackupScheduler {
     private static long nextBackup = - 1;
 
     public static void tick(MinecraftServer server) {
+        if (Globals.INSTANCE.shouldReEnableWorldSaving) {
+            Globals.INSTANCE.shouldReEnableWorldSaving = false;
+            Utilities.enableWorldSaving(server);
+        }
+
         if(config.get().backupInterval < 1) return;
         long now = Instant.now().getEpochSecond();
 

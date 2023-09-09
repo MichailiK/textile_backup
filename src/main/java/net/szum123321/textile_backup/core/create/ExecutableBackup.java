@@ -64,20 +64,11 @@ public record ExecutableBackup(@NotNull MinecraftServer server,
     }
     @Override
     public Void call() throws Exception {
-        if (save) { //save the world
-            log.sendInfoAL(this, "Saving server...");
-            server.saveAll(true, true, false);
-        }
-
         Path outFile = Utilities.getBackupRootPath(Utilities.getLevelName(server)).resolve(getFileName());
 
         log.trace("Outfile is: {}", outFile);
 
         try {
-            //I think I should synchronise these two next calls...
-            Utilities.disableWorldSaving(server);
-            Globals.INSTANCE.disableWatchdog = true;
-
             Globals.INSTANCE.updateTMPFSFlag(server);
 
             log.sendInfoAL(this, "Starting backup");
@@ -133,7 +124,7 @@ public record ExecutableBackup(@NotNull MinecraftServer server,
 
             throw e;
         } finally {
-            Utilities.enableWorldSaving(server);
+            Globals.INSTANCE.shouldReEnableWorldSaving = true;
             Globals.INSTANCE.disableWatchdog = false;
         }
 
@@ -213,6 +204,9 @@ public record ExecutableBackup(@NotNull MinecraftServer server,
         }
 
         public ExecutableBackup build() {
+            if (!server.isOnThread())
+                throw new RuntimeException("Build was not invoked on the server thread!");
+
             if (guessInitiator) {
                 initiator = Utilities.wasSentByPlayer(commandSource) ? ActionInitiator.Player : ActionInitiator.ServerConsole;
             } else if (initiator == null) throw new NoSuchElementException("No initiator provided!");
@@ -224,7 +218,17 @@ public record ExecutableBackup(@NotNull MinecraftServer server,
 
             ExecutableBackup v =  new ExecutableBackup(server, commandSource, initiator, save, cleanup, comment, LocalDateTime.now());
 
+
             if(announce) v.announce();
+
+            Utilities.disableWorldSaving(server);
+            Globals.INSTANCE.disableWatchdog = true;
+
+            if (save) { //save the world
+                log.sendInfoAL(commandSource, "Saving server...");
+                server.saveAll(true, true, false);
+            }
+
             return v;
         }
     }
